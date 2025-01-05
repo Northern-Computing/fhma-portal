@@ -12,7 +12,7 @@ USERNAME = 'admin'
 PASSWORD = 'password'
 
 # Define the URL for the API endpoint
-DJANGO_ENDPOINT = 'http://localhost:8000/api/v1'
+DJANGO_ENDPOINT = 'http://localhost:8000'
 CLIENT_SURVEY_API_URL = DJANGO_ENDPOINT + '/clientsurveys2024/'
 SURVEYOR_API_URL = DJANGO_ENDPOINT + '/surveyors/'
 ZIPCODE_SURVEY_API_URL = DJANGO_ENDPOINT +'/zipcodesurveys/'
