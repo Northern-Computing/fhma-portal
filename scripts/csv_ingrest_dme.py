@@ -7,9 +7,13 @@ from dme_helper import get_dme_id
 
 # Define API endpoints
 API_BASE_URL = "http://localhost:8000/api/v1"
-SUPPLIES_URL = f"{API_BASE_URL}/supplies/"
-DME_ORDER_URL = f"{API_BASE_URL}/dme_order/"
-DME_ORDER_ITEMS_URL = f"{API_BASE_URL}/dme_order_items/"
+
+# DME API endpoints
+EQUIPMENT_URL = f"{API_BASE_URL}/equipment/"
+DME_ORDER_URL = f"{API_BASE_URL}/equipment_orders/"
+DME_ORDER_ITEMS_URL = f"{API_BASE_URL}/equipment_order_items/"
+
+# Client API endpoints
 CLIENTS_URL = f"{API_BASE_URL}/clients/"
 AREAS_URL = f"{API_BASE_URL}/clients_area_serviced/"
 
@@ -48,10 +52,14 @@ def format_ethnicity(input):
         return "OT"
     
 def format_date(date_str):
-    # Parse the input date string
-    date_obj = datetime.strptime(date_str, "%m/%d/%Y")
-    # Format the date to the desired format
-    formatted_date = date_obj.strftime("%Y-%m-%d")
+    try:
+        # Parse the input date string
+        date_obj = datetime.strptime(date_str, "%m/%d/%Y")
+        # Format the date to the desired format
+        formatted_date = date_obj.strftime("%Y-%m-%d")
+    except ValueError:
+        # If there's an error with the date, use the current date
+        formatted_date = datetime.now().strftime("%Y-%m-%d")
     return formatted_date
 
 def format_age(age_str):
@@ -61,6 +69,21 @@ def format_age(age_str):
         print (f"Invalid age value: {age_str}")
         return None
     
+def map_time_needed(time_needed_str):
+    time_needed_map = {
+        "1 week": "1W",
+        "2 weeks": "2W",
+        "1 month": "1M",
+        "3 months": "3M",
+        "6 months": "6M",
+        "1 year": "1Y",
+        "indefinitely": "1Y",  # Assuming indefinite means 1 year
+        "Unknown": "1W",  # Default to 1 week if unknown
+        "Not known yet": "1W",  # Default to 1 week if not known
+        "to be determined": "1W"  # Default to 1 week if to be determined
+    }
+    return time_needed_map.get(time_needed_str.lower(), "1W")
+
 # Helper functions to interact with the API
 def get_area_by_zipcode(zipcode):
     response = requests.get(AREAS_URL, params={"search": zipcode}, auth=HTTPBasicAuth(USERNAME, PASSWORD))
@@ -79,6 +102,9 @@ def get_client_by_name(client_name):
     return None
 
 def create_client(client_data):
+    
+    print (f"Client Data: ", client_data)
+
     client_id = get_client_by_name(client_data["name"])
     if client_id:
         return client_id
@@ -86,17 +112,22 @@ def create_client(client_data):
     response.raise_for_status()
     return response.json()["id"]
 
-def create_supply(supply_data):
-    response = requests.post(SUPPLIES_URL, json=supply_data, auth=HTTPBasicAuth(USERNAME, PASSWORD))
+# Helper functions to interact with the DME API
+def get_dme_by_name(dme_name):
+    response = requests.get(EQUIPMENT_URL, params={"search": dme_name}, auth=HTTPBasicAuth(USERNAME, PASSWORD))
     response.raise_for_status()
-    return response.json()["id"]
+    equipment = response.json()
+    if equipment:
+        return equipment[0]["id"]
+    return None
 
 def create_dme_order(order_data):
     response = requests.post(DME_ORDER_URL, json=order_data, auth=HTTPBasicAuth(USERNAME, PASSWORD))
     response.raise_for_status()
     return response.json()["id"]
 
-def create_supply_order_item(order_item_data):
+def create_dme_order_item(order_item_data):
+    print (f"Order Item Data: {order_item_data}")
     response = requests.post(DME_ORDER_ITEMS_URL, json=order_item_data, auth=HTTPBasicAuth(USERNAME, PASSWORD))
     response.raise_for_status()
     return response.json()["id"]
@@ -107,51 +138,62 @@ def ingest_data():
         reader = csv.DictReader(file, delimiter=",")
 
         for row in reader:
-            # Map client data
-            client_data = {
-                "name": row["Recipient's Name"],
-                "age": format_age(row["Age"]) if row["Age"] else None,
-                "gender": format_gender(row["Gender"]),
-                "email": row["Email Address"],
-                "phone": row["Phone Number"],
-                "address": row["Address of Recipient"],
-                "zipcode": row["ZIPCODE"],
-                "ethnicity": format_ethnicity(row["Race/Ethnicity"]),
-                "below_poverty_line": row["Under Poverty Level? (Below $1,250 a month)"].lower() == "yes",
-                "homeless": row["Homeless?"].lower() == "yes",
-                "veteran": row["Military Veteran?"].lower() == "yes" if "Military Veteran?" in row else False,
-                "disabled": row["Disabled?"].lower() == "yes",
-                "is_active": True,
-                "area_serviced": get_area_by_zipcode(row["ZIPCODE"])
-            }
-            client_id = create_client(client_data)
+            # Check if client already exists
+            client_id = get_client_by_name(row["Name of Recipient"])
+            if not client_id:
+                # Map client data
+                client_data = {
+                    "name": row["Name of Recipient"],
+                    "age": format_age(row["Age"]) if row["Age"] else None,
+                    "gender": format_gender(row["Gender"]),
+                    "email": row["Email Address"],
+                    "phone": row["Phone Number"],
+                    "address": row["Address of Recipient"],
+                    "zipcode": row["ZIPCODE"],
+                    "ethnicity": format_ethnicity(row["Race/Ethnicity"]),
+                    "below_poverty_line": row["Under Poverty Level? (Below $1,250 a month)"].lower() == "yes",
+                    "homeless": row["Homeless?"].lower() == "yes",
+                    "veteran": row["Military Veteran?"].lower() == "yes" if "Military Veteran?" in row else False,
+                    "disabled": row["Disabled?"].lower() == "yes",
+                    "is_active": True,
+                    "area_serviced": get_area_by_zipcode(row["ZIPCODE"])
+                }
+                client_id = create_client(client_data)
 
-            # Map supply order data
-            dme_order_data = {
-                "delivery_date": format_date(row["Date Received"]),
-                "client": client_id
+            # Map DME order data
+            order_data = {
+                "client": client_id,
+                "status": "RT",
+                "time_needed": map_time_needed(row["Approximate Length of Time Needed"]),
+                "rental_date": format_date(row["Date Received"])
             }
-            supply_order_id = create_dme_order(dme_order_data)
 
-            print (f"Processing data for client: {client_data['name']}")
+            print(f"Creating DME order for client: {client_id}")
+            dme_order_id = create_dme_order(order_data)
 
             # Map supplies and supply order items
-            for i in range(19, 48):  
+            for i in range(22, 36):  
                 # Get header name at index i
-                supply_name = reader.fieldnames[i]
-                supply_quantity = row[supply_name]
-                if supply_name and supply_quantity:
-                    supply_id = get_dme_id(supply_name)
-                    supply_quantity = row[supply_name]
-                    if supply_id and supply_quantity:
+                equipment_name = reader.fieldnames[i]
+                # Get quantity of equipment
+                equipment_quantity = row[equipment_name]
+
+                # Check if equipment name and quantity are not empty
+                if equipment_name and equipment_quantity:
+                    
+                    supplies_id = get_dme_id(equipment_name)
+
+                    print (f"Supplies ID: {supplies_id}")
+                    print (f"Equipment Quantity: {equipment_quantity}")
+
+                    if supplies_id and equipment_quantity:
                         supply_order_item_data = {
-                            "quantity": int(supply_quantity),
+                            "quantity": int(equipment_quantity),
                             "other_notes": "",
-                            "order": supply_order_id,
-                            "supplies": supply_id
+                            "order": dme_order_id,
+                            "equipment": supplies_id
                         }
-                        print (f"Creating supply order item for supply: {supply_name}")
-                        create_supply_order_item(supply_order_item_data)
+                        create_dme_order_item(supply_order_item_data)
 
 if __name__ == "__main__":
     try:
