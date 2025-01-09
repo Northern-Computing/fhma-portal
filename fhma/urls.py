@@ -19,6 +19,7 @@ from rest_framework.routers import DefaultRouter
 from client.views import add_client, ClientsViewSet, AreaServicedViewSet
 from supplies.views import SuppliesViewSet, SupplyOrdersViewSet, SupplyOrderItemsViewSet
 from survey.views import ClientSurvey2024ViewSet, ZipcodeSurveyViewSet, SurveyorViewSet, SurveyViewSet
+from equipment.views import EquipmentViewSet, EquipmentOrderViewSet, EquipmentOrderItemViewSet
 
 router = DefaultRouter()
 router.register(r'supplies', SuppliesViewSet, basename='supplies')
@@ -30,6 +31,9 @@ router.register(r'clientsurveys2024', ClientSurvey2024ViewSet, basename='clients
 router.register(r'surveyors', SurveyorViewSet, basename='surveyors')
 router.register(r'surveys', SurveyViewSet, basename='surveys')
 router.register(r'zipcodesurveys', ZipcodeSurveyViewSet, basename='zipcodesurveys')
+router.register(r'equipment', EquipmentViewSet, basename='equipment')
+router.register(r'equipment_orders', EquipmentOrderViewSet, basename='equipment_orders')
+router.register(r'equipment_order_items', EquipmentOrderItemViewSet, basename='equipment_order_items')
 
 urlpatterns = [
     path('add-client/', add_client, name='add_client'),
