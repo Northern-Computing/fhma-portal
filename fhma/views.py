@@ -72,14 +72,14 @@ def dashboard_callback(request, context):
 
     ## INCONCIENT SUPPLIES OVER TIME
     # Calculate the date 90 days ago
-    ninety_days_ago = datetime.now() - timedelta(days=90)
+    ninety_days_ago = datetime.now() - timedelta(days=365)
 
     # Get SuppliesOrder over the last 90 days
     recent_supplies_orders = SuppliesOrder.objects.filter(delivery_date__gte=ninety_days_ago)
     # Annotate and group by date
     orders_by_date = recent_supplies_orders.annotate(date=F('delivery_date')).values('date').annotate(count=Count('id')).order_by('date')
     # Extract dates and counts
-    supplies_dates = [order['date'].strftime('%B %d, %Y') for order in orders_by_date]
+    supplies_dates = [order['date'].strftime('%B %d') for order in orders_by_date]
     supplies_counts = [order['count'] for order in orders_by_date]
 
     ## EQUIPMENT ORDERS OVER TIME
@@ -88,7 +88,7 @@ def dashboard_callback(request, context):
     # Annotate and group by date
     orders_by_date = recent_orders.annotate(date=F('last_updated')).values('date').annotate(count=Count('id')).order_by('date')
     # Extract dates and counts
-    orders_dates = [order['date'].strftime('%B %d, %Y') for order in orders_by_date]
+    orders_dates = [order['date'].strftime('%B %d') for order in orders_by_date]
     orders_counts = [order['count'] for order in orders_by_date]
 
     context.update(
