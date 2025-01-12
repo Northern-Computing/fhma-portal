@@ -62,7 +62,7 @@ class ClientAdmin(ModelAdmin):
 
     list_display = ["name", "area_serviced", "is_active"]
     search_fields = ["name", "email", "phone", "address", "city", "state", "country", "area_serviced__name", "is_active"]
-    list_filter = ["name", "email", "phone", "address", "city", "state", "area_serviced", "country", "is_active"]
+    list_filter = ["gender", "veteran", "below_poverty_line", "homeless", "city", "state", "area_serviced", "country", "is_active"]
     list_display_links = ["name", "area_serviced", "is_active"]
     autocomplete_fields = ["area_serviced"]
 
