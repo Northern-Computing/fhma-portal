@@ -43,10 +43,10 @@ class OrderAdmin(ModelAdmin):
     # Display fields in changeform in compressed mode
     compressed_fields = True  # Default: False
 
-    list_display = ["client","equipment", "client_area_serviced_name", "show_status_customized_color"]
+    list_display = ["client","client_phone", "equipment", "client_area_serviced_name", "show_status_customized_color"]
     list_filter = ["status", "items__equipment", "client__area_serviced__name", "client__area_serviced__name"]
     list_display_links = ["client", "show_status_customized_color"]
-    search_fields = ["client__name", "items__equipment__name", "status", "client__area_serviced__name"]
+    search_fields = ["client__name", "client__phone", "items__equipment__name", "status", "client__area_serviced__name"]
     autocomplete_fields = ["client"]
     verbose_name = "DME Order"
     verbose_name_plural = "DME Orders"
@@ -92,6 +92,16 @@ class OrderAdmin(ModelAdmin):
             return obj.client.area_serviced.name
         return None
 
+    @display(
+        description=_("Client Phone"),
+        ordering="client__phone",
+        label=True
+    )
+    def client_phone(self, obj):
+        if obj.client:
+            return obj.client.phone
+        return None
+    
 @admin.register(DMEOrderItem)
 class DMEOrderItemAdmin(ModelAdmin):
     warn_unsaved_form = True
