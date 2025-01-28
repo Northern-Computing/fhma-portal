@@ -88,7 +88,9 @@ class OrderAdmin(ModelAdmin):
         label=True
     )
     def client_area_serviced_name(self, obj):
-        return obj.client.area_serviced.name
+        if obj.client and obj.client.area_serviced:
+            return obj.client.area_serviced.name
+        return None
 
 @admin.register(DMEOrderItem)
 class DMEOrderItemAdmin(ModelAdmin):
