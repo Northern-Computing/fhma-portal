@@ -43,10 +43,10 @@ class OrderAdmin(ModelAdmin):
     # Display fields in changeform in compressed mode
     compressed_fields = True  # Default: False
 
-    list_display = ["client", "show_status_customized_color"]
-    list_filter = ["status", "client"]
+    list_display = ["client","equipment", "show_status_customized_color"]
+    list_filter = ["status", "client", "items__equipment"]
     list_display_links = ["client", "show_status_customized_color"]
-    search_fields = ["client"]
+    search_fields = ["client__name", "items__equipment__name", "status"]
     autocomplete_fields = ["client"]
     verbose_name = "DME Order"
     verbose_name_plural = "DME Orders"
@@ -72,6 +72,15 @@ class OrderAdmin(ModelAdmin):
             return 'Rented'
         return 'Returned'
 
+    @display(
+        description=_("Equipment Rented"),
+        ordering="equipment",
+        label=True
+    )
+    def equipment(self, obj):
+        items = DMEOrderItem.objects.filter(order=obj)
+        return ", ".join([f"{item.equipment.name} ({item.quantity})" for item in items])
+
 @admin.register(DMEOrderItem)
 class DMEOrderItemAdmin(ModelAdmin):
     warn_unsaved_form = True
@@ -79,4 +88,3 @@ class DMEOrderItemAdmin(ModelAdmin):
     autcomplete_fields = ["equipment"]
     search_fields = ["equipment"]
 
-    
