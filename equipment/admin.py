@@ -43,10 +43,10 @@ class OrderAdmin(ModelAdmin):
     # Display fields in changeform in compressed mode
     compressed_fields = True  # Default: False
 
-    list_display = ["client","equipment", "show_status_customized_color"]
-    list_filter = ["status", "client", "items__equipment"]
+    list_display = ["client","equipment", "client_area_serviced_name", "show_status_customized_color"]
+    list_filter = ["status", "items__equipment", "client__area_serviced__name", "client__area_serviced__name"]
     list_display_links = ["client", "show_status_customized_color"]
-    search_fields = ["client__name", "items__equipment__name", "status"]
+    search_fields = ["client__name", "items__equipment__name", "status", "client__area_serviced__name"]
     autocomplete_fields = ["client"]
     verbose_name = "DME Order"
     verbose_name_plural = "DME Orders"
@@ -80,6 +80,15 @@ class OrderAdmin(ModelAdmin):
     def equipment(self, obj):
         items = DMEOrderItem.objects.filter(order=obj)
         return ", ".join([f"{item.equipment.name} ({item.quantity})" for item in items])
+
+
+    @display(
+        description=_("Client Area Serviced"),
+        ordering="client__area_serviced__name",
+        label=True
+    )
+    def client_area_serviced_name(self, obj):
+        return obj.client.area_serviced.name
 
 @admin.register(DMEOrderItem)
 class DMEOrderItemAdmin(ModelAdmin):
