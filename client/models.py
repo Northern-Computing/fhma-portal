@@ -118,7 +118,7 @@ class Client(models.Model):
     below_poverty_line = models.BooleanField(
         null=True,
         blank=True,
-        verbose_name="Does the client live below the poverty line (below $1,250 a month)?",
+        verbose_name="Does the client live below the poverty line (below $2500 per month)?",
         help_text="Please select Yes or No"
     )
     homeless = models.BooleanField(
