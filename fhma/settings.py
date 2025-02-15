@@ -320,7 +320,7 @@ UNFOLD = {
                         "permission": lambda request: request.user.has_perm('events.view_survey'),
                     },
                     {
-                        "title": _("2024 Client Survey"),
+                        "title": _("Client Survey 2024-2025"),
                         "icon": "calendar_today",
                         "link": reverse_lazy("admin:survey_clientsurvey2024_changelist"),
                         "permission": lambda request: request.user.has_perm('events.view_survey'),
